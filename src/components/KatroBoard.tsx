@@ -245,8 +245,10 @@ const KatroBoard: React.FC = () => {
       <div className="flex gap-3">
         <button
           onClick={handleRestart}
+          disabled={!gameState.gameOver}
           className="px-6 py-2.5 rounded-lg bg-secondary text-secondary-foreground font-semibold text-sm
-            hover:bg-secondary/80 transition-all duration-200 active:scale-95"
+            hover:bg-secondary/80 transition-all duration-200 active:scale-95
+            disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100"
         >
           Nouvelle Partie
         </button>
