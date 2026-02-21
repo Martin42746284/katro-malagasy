@@ -98,14 +98,18 @@ export function executeTurn(state: GameState, chosenHole: number): { newState: G
 
     // Distribute tokens one by one counter-clockwise
     let lastHole = currentHole;
+    let landedInEmpty = false;
     for (let i = 0; i < tokens; i++) {
       lastHole = getNextHole(lastHole);
+      if (i === tokens - 1 && myHoles[lastHole] === 0) {
+        landedInEmpty = true;
+      }
       myHoles[lastHole]++;
       steps.push({ type: 'drop', hole: lastHole, tokenCount: myHoles[lastHole] });
     }
 
-    // Check capture before continuation check
-    if (isFrontRow(lastHole)) {
+    // Check capture before continuation check: only capture if landed in a non-empty hole
+    if (isFrontRow(lastHole) && !landedInEmpty) {
       const oppFrontIdx = getOpposingFrontIndex(lastHole);
       const allOppFrontEmpty = oppHoles[0] === 0 && oppHoles[1] === 0 && oppHoles[2] === 0 && oppHoles[3] === 0;
 
@@ -194,9 +198,17 @@ export function aiChooseMove(state: GameState): number {
 
   for (const move of validMoves) {
     const { newState } = executeTurn(state, move);
-    // Score: maximize own captures, minimize opponent options
-    const score = (newState.isPlayerTurn ? newState.opponentScore : newState.playerScore)
-      - (newState.isPlayerTurn ? newState.playerScore : newState.opponentScore);
+
+    // Scoring: calculate total tokens on each side
+    let score;
+    if (newState.gameOver) {
+      // Big bonus for winning, big penalty for losing
+      score = (newState.opponentScore - newState.playerScore) * 100;
+    } else {
+      const playerTokens = newState.playerHoles.reduce((a, b) => a + b, 0);
+      const opponentTokens = newState.opponentHoles.reduce((a, b) => a + b, 0);
+      score = opponentTokens - playerTokens;
+    }
 
     // Add some randomness to avoid predictability
     const randomBonus = Math.random() * 0.5;
